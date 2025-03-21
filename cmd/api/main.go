@@ -12,6 +12,7 @@ import (
 
 	"github.com/rodrigocostarcs/pix-generator/internal/application/usecases"
 	"github.com/rodrigocostarcs/pix-generator/internal/domain/services"
+	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/cache"
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/repositories"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/handlers"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/routes"
@@ -23,6 +24,7 @@ func main() {
 		log.Println("Aviso: Arquivo .env não encontrado, usando variáveis de ambiente do sistema")
 	}
 
+	// Configuração do banco de dados
 	dbHost := getEnv("DB_HOST", "localhost")
 	dbPort := getEnv("DB_PORT", "3306")
 	dbUser := getEnv("DB_USER", "root")
@@ -43,11 +45,19 @@ func main() {
 		log.Fatalf("Falha ao pingar o banco de dados: %v", err)
 	}
 
+	// Configuração do Redis para cache
+	redisHost := getEnv("REDIS_HOST", "localhost")
+	redisPort := getEnv("REDIS_PORT", "6379")
+	redisPassword := getEnv("REDIS_PASSWORD", "")
+
+	// Criar adaptador de cache
+	cacheAdapter := cache.NewRedisAdapter(redisHost, redisPort, redisPassword, 0)
+
 	// Injeção de dependências (DI)
 	pixService := services.NewPixGeneratorService()
 	pixRepository := repositories.NewMysqlPixRepository(db)
 	generatePixUseCase := usecases.NewGeneratePixUseCase(pixService, pixRepository)
-	pixHandler := handlers.NewPixHandler(generatePixUseCase, pixRepository)
+	pixHandler := handlers.NewPixHandler(generatePixUseCase, pixRepository, cacheAdapter)
 
 	// Configurar o router Gin
 	router := gin.Default()
