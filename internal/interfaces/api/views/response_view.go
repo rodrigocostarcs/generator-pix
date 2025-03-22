@@ -6,10 +6,18 @@ import "github.com/gin-gonic/gin"
 type ResponseView struct{}
 
 // Response representa a estrutura padrão de resposta da API
+// swagger:model
 type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
+	// Indica se a requisição foi bem-sucedida
+	// example: true
+	Success bool `json:"success"`
+
+	// Dados de resposta (opcional)
+	Data interface{} `json:"data,omitempty"`
+
+	// Mensagem de erro (apenas quando Success = false)
+	// example: Credenciais inválidas
+	Error string `json:"error,omitempty"`
 }
 
 // NewResponseView cria uma nova instância de ResponseView

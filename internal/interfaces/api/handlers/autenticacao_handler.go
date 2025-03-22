@@ -24,6 +24,15 @@ func NovaAutenticacaoHandler(autenticacaoUseCase *usecases.AutenticacaoUseCase) 
 }
 
 // Registrar processa a requisição para registro de um novo estabelecimento
+// @Summary      Registrar estabelecimento
+// @Description  Registra um novo estabelecimento no sistema
+// @Tags         autenticacao
+// @Accept       json
+// @Produce      json
+// @Param        request  body      models.EstabelecimentoRequest  true  "Dados do estabelecimento"
+// @Success      201      {object}  views.Response{data=models.EstabelecimentoResponse}  "Estabelecimento criado com sucesso"
+// @Failure      400      {object}  views.Response  "Erro de validação dos dados"
+// @Router       /registrar [post]
 func (h *AutenticacaoHandler) Registrar(c *gin.Context) {
 	var req models.EstabelecimentoRequest
 
@@ -43,6 +52,16 @@ func (h *AutenticacaoHandler) Registrar(c *gin.Context) {
 }
 
 // Login processa a requisição de login
+// @Summary      Login de estabelecimento
+// @Description  Autentica um estabelecimento e retorna um token JWT
+// @Tags         autenticacao
+// @Accept       json
+// @Produce      json
+// @Param        request  body      models.LoginRequest  true  "Credenciais de login"
+// @Success      200      {object}  views.Response{data=models.LoginResponse}  "Login realizado com sucesso"
+// @Failure      400      {object}  views.Response  "Erro de validação dos dados"
+// @Failure      401      {object}  views.Response  "Credenciais inválidas"
+// @Router       /login [post]
 func (h *AutenticacaoHandler) Login(c *gin.Context) {
 	var req models.LoginRequest
 

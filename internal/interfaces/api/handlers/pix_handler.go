@@ -40,6 +40,18 @@ func NewPixHandler(generatePixUseCase *usecases.GeneratePixUseCase, pixRepositor
 }
 
 // GeneratePix processa a requisição para gerar um código PIX
+// @Summary      Gerar código PIX
+// @Description  Gera um novo código PIX estático com base nos dados fornecidos
+// @Tags         pix
+// @Accept       json
+// @Produce      json
+// @Param        request  body      models.PixRequest  true  "Dados para geração do PIX"
+// @Success      200      {object}  views.Response{data=models.PixResponse}  "Código PIX gerado com sucesso"
+// @Failure      400      {object}  views.Response     "Erro de requisição"
+// @Failure      401      {object}  views.Response     "Não autorizado"
+// @Failure      500      {object}  views.Response     "Erro interno do servidor"
+// @Security     BearerAuth
+// @Router       /generate [post]
 func (h *PixHandler) GeneratePix(c *gin.Context) {
 	var req models.PixRequest
 
@@ -75,6 +87,19 @@ func (h *PixHandler) GeneratePix(c *gin.Context) {
 }
 
 // DownloadQRCode manipula o download do QR code
+// @Summary      Download QR Code
+// @Description  Faz o download de um QR code para o código PIX gerado
+// @Tags         pix
+// @Produce      image/png
+// @Produce      application/json
+// @Param        codigo_pix  query     string  true   "Código PIX gerado"
+// @Param        format      query     string  false  "Formato de resposta (json ou png, padrão é png)"
+// @Success      200         {file}    file    "QR Code em formato PNG"
+// @Success      200         {object}  views.Response{data=models.PixResponse}  "Detalhes do QR Code em JSON"
+// @Failure      400         {object}  views.Response  "Código PIX não fornecido"
+// @Failure      404         {object}  views.Response  "Código PIX não encontrado"
+// @Failure      500         {object}  views.Response  "Erro interno do servidor"
+// @Router       /download-qrcode [get]
 func (h *PixHandler) DownloadQRCode(c *gin.Context) {
 	codigoPix := c.Query("codigo_pix")
 

@@ -1,0 +1,344 @@
+basePath: /api
+definitions:
+  github_com_rodrigocostarcs_pix-generator_internal_domain_models.EstabelecimentoRequest:
+    properties:
+      descricao:
+        description: |-
+          Descrição do estabelecimento (opcional)
+          example: Loja de produtos diversos
+        type: string
+      email:
+        description: |-
+          Email do estabelecimento (usado para login)
+          required: true
+          example: contato@lojadojose.com.br
+        type: string
+      nome:
+        description: |-
+          Nome do estabelecimento
+          required: true
+          example: Loja do José
+        type: string
+      senha:
+        description: |-
+          Senha do estabelecimento (mínimo 6 caracteres)
+          required: true
+          example: senha123
+          min length: 6
+        minLength: 6
+        type: string
+    required:
+    - email
+    - nome
+    - senha
+    type: object
+  github_com_rodrigocostarcs_pix-generator_internal_domain_models.EstabelecimentoResponse:
+    properties:
+      ativo:
+        description: |-
+          Status de ativação do estabelecimento
+          example: true
+        type: boolean
+      atualizado_em:
+        description: |-
+          Data da última atualização
+          example: 2023-01-01T12:00:00Z
+        type: string
+      criado_em:
+        description: |-
+          Data de criação
+          example: 2023-01-01T12:00:00Z
+        type: string
+      descricao:
+        description: |-
+          Descrição do estabelecimento (opcional)
+          example: Loja de produtos diversos
+        type: string
+      email:
+        description: |-
+          Email do estabelecimento
+          example: contato@lojadojose.com.br
+        type: string
+      id:
+        description: |-
+          ID único do estabelecimento
+          example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      nome:
+        description: |-
+          Nome do estabelecimento
+          example: Loja do José
+        type: string
+    type: object
+  github_com_rodrigocostarcs_pix-generator_internal_domain_models.LoginRequest:
+    properties:
+      email:
+        description: |-
+          Email do estabelecimento
+          required: true
+          example: contato@lojadojose.com.br
+        type: string
+      senha:
+        description: |-
+          Senha do estabelecimento
+          required: true
+          example: senha123
+        type: string
+    required:
+    - email
+    - senha
+    type: object
+  github_com_rodrigocostarcs_pix-generator_internal_domain_models.LoginResponse:
+    properties:
+      estabelecimento:
+        allOf:
+        - $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.EstabelecimentoResponse'
+        description: Informações do estabelecimento autenticado
+      token:
+        description: |-
+          Token JWT para autenticação nas rotas protegidas
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  github_com_rodrigocostarcs_pix-generator_internal_domain_models.PixRequest:
+    properties:
+      chave:
+        description: |-
+          Chave PIX do beneficiário (obrigatório)
+          required: true
+          example: josesilva@email.com
+        type: string
+      cidade:
+        description: |-
+          Cidade do beneficiário (obrigatório)
+          required: true
+          example: SAO PAULO
+        type: string
+      descricao:
+        description: |-
+          Descrição da transação (opcional)
+          example: PAGAMENTO DE SERVICOS
+        type: string
+      identificador:
+        description: |-
+          Identificador único da transação (opcional)
+          example: FATURA123
+        type: string
+      nome:
+        description: |-
+          Nome do beneficiário do PIX (obrigatório)
+          required: true
+          example: JOSE DA SILVA
+        type: string
+      valor:
+        description: |-
+          Valor da transação (opcional)
+          example: 100.50
+        type: number
+    required:
+    - chave
+    - cidade
+    - nome
+    type: object
+  github_com_rodrigocostarcs_pix-generator_internal_domain_models.PixResponse:
+    properties:
+      codigo_pix:
+        description: |-
+          Código PIX gerado conforme padrão EMV
+          example: 00020101021126580014BR.GOV.BCB.PIX0136josesilva@email.com5204000053039865802BR5913JOSE DA SILVA6009SAO PAULO62150511FATURA12308103100.506304E5B1
+        type: string
+      qrcode_png:
+        description: |-
+          QR Code em formato PNG (base64)
+          example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      qrcode_svg:
+        description: |-
+          QR Code em formato SVG
+          example: <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 250'>...</svg>
+        type: string
+    type: object
+  github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response:
+    properties:
+      data:
+        description: Dados de resposta (opcional)
+      error:
+        description: |-
+          Mensagem de erro (apenas quando Success = false)
+          example: Credenciais inválidas
+        type: string
+      success:
+        description: |-
+          Indica se a requisição foi bem-sucedida
+          example: true
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: contato@example.com
+    name: Desenvolvedor
+  description: API para geração e gerenciamento de códigos PIX seguindo arquitetura
+    DDD.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Gerador de PIX API
+  version: "1.0"
+paths:
+  /download-qrcode:
+    get:
+      description: Faz o download de um QR code para o código PIX gerado
+      parameters:
+      - description: Código PIX gerado
+        in: query
+        name: codigo_pix
+        required: true
+        type: string
+      - description: Formato de resposta (json ou png, padrão é png)
+        in: query
+        name: format
+        type: string
+      produces:
+      - image/png
+      - application/json
+      responses:
+        "200":
+          description: Detalhes do QR Code em JSON
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.PixResponse'
+              type: object
+        "400":
+          description: Código PIX não fornecido
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+        "404":
+          description: Código PIX não encontrado
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+      summary: Download QR Code
+      tags:
+      - pix
+  /generate:
+    post:
+      consumes:
+      - application/json
+      description: Gera um novo código PIX estático com base nos dados fornecidos
+      parameters:
+      - description: Dados para geração do PIX
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.PixRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Código PIX gerado com sucesso
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.PixResponse'
+              type: object
+        "400":
+          description: Erro de requisição
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+        "401":
+          description: Não autorizado
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+      security:
+      - BearerAuth: []
+      summary: Gerar código PIX
+      tags:
+      - pix
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica um estabelecimento e retorna um token JWT
+      parameters:
+      - description: Credenciais de login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login realizado com sucesso
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.LoginResponse'
+              type: object
+        "400":
+          description: Erro de validação dos dados
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+        "401":
+          description: Credenciais inválidas
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+      summary: Login de estabelecimento
+      tags:
+      - autenticacao
+  /registrar:
+    post:
+      consumes:
+      - application/json
+      description: Registra um novo estabelecimento no sistema
+      parameters:
+      - description: Dados do estabelecimento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.EstabelecimentoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Estabelecimento criado com sucesso
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_domain_models.EstabelecimentoResponse'
+              type: object
+        "400":
+          description: Erro de validação dos dados
+          schema:
+            $ref: '#/definitions/github_com_rodrigocostarcs_pix-generator_internal_interfaces_api_views.Response'
+      summary: Registrar estabelecimento
+      tags:
+      - autenticacao
+securityDefinitions:
+  BearerAuth:
+    description: Digite 'Bearer ' seguido do token JWT
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

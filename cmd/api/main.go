@@ -9,7 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	_ "github.com/rodrigocostarcs/pix-generator/docs" // Importando a documentação Swagger
 	"github.com/rodrigocostarcs/pix-generator/internal/application/usecases"
 	"github.com/rodrigocostarcs/pix-generator/internal/domain/services"
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/cache"
@@ -18,6 +21,25 @@ import (
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/middlewares"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/routes"
 )
+
+// @title           Gerador de PIX API
+// @version         1.0
+// @description     API para geração e gerenciamento de códigos PIX seguindo arquitetura DDD.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Desenvolvedor
+// @contact.email  contato@example.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Digite 'Bearer ' seguido do token JWT
 
 func main() {
 	err := godotenv.Load()
@@ -76,12 +98,16 @@ func main() {
 	// Configurar o router Gin
 	router := gin.Default()
 
+	// Configurar Swagger
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// Configurar as rotas
 	routes.SetupRoutes(router, pixHandler, autenticacaoHandler, autenticacaoMiddleware)
 
 	// Iniciar o servidor
 	port := getEnv("PORT", "8080")
 	log.Printf("Servidor iniciado na porta %s", port)
+	log.Printf("Documentação Swagger disponível em: http://localhost:%s/swagger/index.html", port)
 	router.Run(":" + port)
 }
 

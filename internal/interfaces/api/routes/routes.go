@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/rodrigocostarcs/pix-generator/docs"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/handlers"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/middlewares"
 )
@@ -36,6 +37,6 @@ func SetupRoutes(
 
 	// Rota para página inicial (pode ser utilizada para interface web)
 	router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Gerador de PIX API - Use a rota /api/login para autenticar")
+		c.String(http.StatusOK, "Gerador de PIX API - Acesse /swagger/index.html para documentação")
 	})
 }

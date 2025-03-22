@@ -10,6 +10,7 @@ O projeto está estruturado de acordo com os padrões arquiteturais do DDD:
 pix-generator/
 ├── cmd/                    # Pontos de entrada da aplicação
 │   └── api/                # Ponto de entrada do servidor API
+├── docs/                   # Documentação Swagger gerada automaticamente
 ├── internal/               # Código privado da aplicação
 │   ├── domain/             # Camada de domínio (regras de negócio principais)
 │   │   ├── models/         # Entidades de domínio e objetos de valor
@@ -25,6 +26,9 @@ pix-generator/
 │           └── middlewares/# Middlewares HTTP
 ├── pkg/                    # Pacotes compartilhados, públicos
 │   └── utils/              # Utilitários e auxiliares
+├── scripts/                # Scripts para desenvolvimento e implantação
+│   ├── dev-entrypoint.sh   # Script de inicialização para desenvolvimento
+│   └── gen-swagger.sh      # Script para gerar documentação Swagger
 └── web/                    # Recursos web
     ├── static/             # Arquivos estáticos (CSS, JS, imagens)
     └── templates/          # Templates HTML
@@ -67,21 +71,68 @@ Contém os adaptadores que conectam a aplicação ao mundo exterior.
 
 ## Primeiros Passos
 
+### Pré-requisitos
+
+- Go 1.24 ou superior
+- MySQL 8.0
+- Redis (para cache)
+- Docker e Docker Compose (opcional)
+
+### Execução com Docker
+
 1. Clone o repositório
-2. Instale as dependências: `go mod tidy`
-3. Execute a aplicação: `go run cmd/api/main.go`
+2. Configure as variáveis de ambiente (ou use os valores padrão no arquivo .env.example)
+3. Execute com Docker Compose:
 
-## Endpoints da API
+```bash
+make docker-run
+```
 
-- `POST /api/generate` - Gerar um código PIX
-- `GET /download-qrcode` - Baixar imagem do QR code
+A aplicação estará disponível em http://localhost:8080 e a documentação Swagger em http://localhost:8080/swagger/index.html.
+
+### Execução Local
+
+1. Clone o repositório
+2. Configure as variáveis de ambiente (ou copie de .env.example para .env)
+3. Instale as dependências: `go mod tidy`
+4. Gere a documentação Swagger: `make swagger`
+5. Execute a aplicação: `make run`
+
+## Documentação da API
+
+A documentação da API é gerada automaticamente usando Swagger. Após iniciar a aplicação, você pode acessá-la em:
+
+http://localhost:8080/swagger/index.html
+
+### Endpoints da API
+
+- `POST /api/registrar` - Registrar um novo estabelecimento
+- `POST /api/login` - Autenticar um estabelecimento e obter um token JWT
+- `POST /api/generate` - Gerar um código PIX (requer autenticação)
+- `GET /api/download-qrcode` - Baixar imagem do QR code
+
+## Comandos úteis
+
+O projeto inclui um Makefile para facilitar tarefas comuns:
+
+- `make build` - Compila a aplicação
+- `make run` - Executa a aplicação localmente
+- `make test` - Executa os testes
+- `make swagger` - Gera a documentação Swagger
+- `make docker-build` - Constrói a imagem Docker
+- `make docker-run` - Executa o contêiner Docker
+- `make docker-stop` - Para o contêiner Docker
+- `make clean` - Remove binários e arquivos temporários
 
 ## Tecnologias
 
-- Go (Golang)
-- Fiber (Framework Web)
-- Biblioteca de Geração de QR Code
-- Templates HTML para Interface Web
+- Go (Golang) 1.24
+- Gin (Framework Web)
+- MySQL (Banco de dados)
+- Redis (Cache)
+- JWT (Autenticação)
+- Swagger (Documentação da API)
+- Docker e Docker Compose (Containerização)
 
 ## Contribuindo
 

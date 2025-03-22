@@ -5,6 +5,9 @@ WORKDIR /app
 # Instalar ferramentas necessárias
 RUN apk add --no-cache git
 
+# Instalar swag para geração de documentação Swagger
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # Copiar arquivos de dependências
 COPY go.mod go.sum ./
 RUN go mod download
