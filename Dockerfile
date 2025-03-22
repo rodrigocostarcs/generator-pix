@@ -1,27 +1,20 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24-alpine
 
 WORKDIR /app
+
+# Instalar ferramentas necessárias
+RUN apk add --no-cache git
 
 # Copiar arquivos de dependências
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copiar o código fonte
-COPY . .
-
-# Compilar o aplicativo
-RUN CGO_ENABLED=0 GOOS=linux go build -o pix-generator ./cmd/api/main.go
-
-# Imagem final
-FROM alpine:latest
-
-WORKDIR /app
-
-# Copiar o binário compilado
-COPY --from=builder /app/pix-generator .
-
-# Porta que será exposta
+# Exposição da porta
 EXPOSE 8080
 
-# Comando para executar o aplicativo
-CMD ["./pix-generator"]
+# Script de inicialização para desenvolvimento
+COPY scripts/dev-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+
+# Comando para executar em modo de desenvolvimento
+CMD ["/usr/local/bin/dev-entrypoint.sh"]

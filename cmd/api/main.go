@@ -15,6 +15,7 @@ import (
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/cache"
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/repositories"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/handlers"
+	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/middlewares"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/routes"
 )
 
@@ -29,7 +30,7 @@ func main() {
 	dbPort := getEnv("DB_PORT", "3306")
 	dbUser := getEnv("DB_USER", "root")
 	dbPassword := getEnv("DB_PASSWORD", "password")
-	dbName := getEnv("DB_NAME", "pix_generator")
+	dbName := getEnv("DB_NAME", "generator_pix")
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		dbUser, dbPassword, dbHost, dbPort, dbName)
@@ -53,17 +54,30 @@ func main() {
 	// Criar adaptador de cache
 	cacheAdapter := cache.NewRedisAdapter(redisHost, redisPort, redisPassword, 0)
 
-	// Injeção de dependências (DI)
+	// Serviços
 	pixService := services.NewPixGeneratorService()
+	autenticacaoService := services.NewAutenticacaoService()
+
+	// Repositórios
 	pixRepository := repositories.NewMysqlPixRepository(db)
+	estabelecimentoRepository := repositories.NewMysqlEstabelecimentoRepository(db)
+
+	// Casos de uso
 	generatePixUseCase := usecases.NewGeneratePixUseCase(pixService, pixRepository)
+	autenticacaoUseCase := usecases.NewAutenticacaoUseCase(autenticacaoService, estabelecimentoRepository)
+
+	// Handlers
 	pixHandler := handlers.NewPixHandler(generatePixUseCase, pixRepository, cacheAdapter)
+	autenticacaoHandler := handlers.NovaAutenticacaoHandler(autenticacaoUseCase)
+
+	// Middlewares
+	autenticacaoMiddleware := middlewares.NewAutenticacaoMiddleware(autenticacaoService)
 
 	// Configurar o router Gin
 	router := gin.Default()
 
 	// Configurar as rotas
-	routes.SetupRoutes(router, pixHandler)
+	routes.SetupRoutes(router, pixHandler, autenticacaoHandler, autenticacaoMiddleware)
 
 	// Iniciar o servidor
 	port := getEnv("PORT", "8080")

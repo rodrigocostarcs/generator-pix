@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   app:
     build: .
@@ -17,6 +16,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - PORT=8080
+      - JWT_SECRET=c8b7a3e5f9d2b6a1c4d7e9f3b2a5c8d9e6f3a2b5c8d7e9f3b6a5c8d9e6f3b2a5
+    volumes:
+      - ./:/app 
     networks:
       - pix-network
     restart: unless-stopped

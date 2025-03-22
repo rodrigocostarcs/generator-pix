@@ -1,0 +1,11 @@
+.git
+.github
+tmp
+bin
+*.md
+.vscode
+.idea
+*.exe
+*.test
+*.out
+.DS_Store
