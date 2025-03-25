@@ -6,12 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/png"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/nfnt/resize"
 )
 
 // TemplatePosition define a posição e tamanho do QR code no template
@@ -33,9 +36,9 @@ func NewTemplateProcessor(templatesDir string) *TemplateProcessor {
 	// Configuração dos templates e posições dos QR codes
 	templates := map[string]TemplatePosition{
 		"template_pix_1": {
-			X:        250,
-			Y:        390,
-			Size:     200,
+			X:        250, // Posição horizontal mais centralizada
+			Y:        400, // Posição vertical melhor
+			Size:     200, // Tamanho grande o suficiente para ser legível
 			Filename: "template_pix_1.png",
 		},
 	}
@@ -121,20 +124,55 @@ func (p *TemplateProcessor) ApplyTemplate(qrCodePNG string, templateName string)
 	// Desenhar o template
 	draw.Draw(resultImg, bounds, templateImg, image.Point{}, draw.Over)
 
-	// Desenhar o QR code na posição especificada
-	qrRect := image.Rect(
-		templateConfig.X,
-		templateConfig.Y,
-		templateConfig.X+templateConfig.Size,
-		templateConfig.Y+templateConfig.Size,
+	// Calcular o tamanho real do QR Code para preservar sua proporção
+	qrSize := qrImg.Bounds().Dx()
+
+	// Calcular o fator de escala necessário para ajustar o QR code ao espaço desejado
+	// Reduzir um pouco o tamanho para garantir margens
+	scaleFactor := float64(templateConfig.Size) / float64(qrSize) * 0.90 // 90% do tamanho para garantir margem
+
+	// Calcular o novo tamanho
+	newSize := int(float64(qrSize) * scaleFactor)
+
+	// Calcular as margens adicionais para centralizar dentro do espaço alocado
+	marginX := (templateConfig.Size - newSize) / 2
+	marginY := (templateConfig.Size - newSize) / 2
+
+	// Definir a área para a zona quieta (margem branca) ao redor do QR code
+	quietZone := 20 // pixels de margem branca
+	whiteArea := image.Rect(
+		templateConfig.X-quietZone,
+		templateConfig.Y-quietZone,
+		templateConfig.X+templateConfig.Size+quietZone,
+		templateConfig.Y+templateConfig.Size+quietZone,
 	)
-	draw.Draw(resultImg, qrRect, qrImg, image.Point{}, draw.Over)
+
+	// Desenhar um fundo branco para a zona quieta
+	whiteColor := image.NewUniform(color.White)
+	draw.Draw(resultImg, whiteArea, whiteColor, image.Point{}, draw.Src)
+
+	// Redimensionar o QR code para o novo tamanho
+	resizedQR := resize.Resize(uint(newSize), uint(newSize), qrImg, resize.Lanczos3)
+
+	// Calcular a posição final para o QR code redimensionado
+	qrRect := image.Rect(
+		templateConfig.X+marginX,
+		templateConfig.Y+marginY,
+		templateConfig.X+marginX+newSize,
+		templateConfig.Y+marginY+newSize,
+	)
+
+	// Desenhar o QR code redimensionado
+	draw.Draw(resultImg, qrRect, resizedQR, image.Point{}, draw.Over)
 
 	log.Printf("Composição de imagem concluída, codificando resultado...")
 
-	// Converter para PNG
+	// Converter para PNG com configuração de qualidade máxima
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, resultImg); err != nil {
+	encoder := png.Encoder{
+		CompressionLevel: png.NoCompression, // Usar sem compressão para máxima qualidade
+	}
+	if err := encoder.Encode(&buf, resultImg); err != nil {
 		log.Printf("Erro ao codificar imagem resultante: %v", err)
 		return nil, err
 	}
