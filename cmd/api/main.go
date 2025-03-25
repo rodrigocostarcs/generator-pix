@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -12,7 +13,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/rodrigocostarcs/pix-generator/docs" // Importando a documentação Swagger
+	_ "github.com/rodrigocostarcs/pix-generator/docs"
 	"github.com/rodrigocostarcs/pix-generator/internal/application/usecases"
 	"github.com/rodrigocostarcs/pix-generator/internal/domain/services"
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/cache"
@@ -73,6 +74,40 @@ func main() {
 	redisPort := getEnv("REDIS_PORT", "6379")
 	redisPassword := getEnv("REDIS_PASSWORD", "")
 
+	// Configurar o diretório de templates
+	templatesDir := getEnv("TEMPLATES_DIR", "./templates")
+
+	// Obter o caminho absoluto para o diretório de templates
+	absTemplatesDir, err := filepath.Abs(templatesDir)
+	if err != nil {
+		log.Printf("Aviso: não foi possível obter o caminho absoluto para templates: %v", err)
+		absTemplatesDir = templatesDir
+	}
+
+	log.Printf("Diretório de templates (caminho absoluto): %s", absTemplatesDir)
+
+	// Criar diretório se não existir
+	if _, err := os.Stat(absTemplatesDir); os.IsNotExist(err) {
+		log.Printf("Criando diretório de templates em: %s", absTemplatesDir)
+		if err := os.MkdirAll(absTemplatesDir, 0755); err != nil {
+			log.Printf("Aviso: não foi possível criar o diretório de templates: %v", err)
+		}
+	}
+
+	// Listar arquivos no diretório
+	files, err := os.ReadDir(absTemplatesDir)
+	if err != nil {
+		log.Printf("Erro ao ler diretório de templates: %v", err)
+	} else {
+		log.Printf("Arquivos no diretório %s:", absTemplatesDir)
+		for _, file := range files {
+			log.Printf(" - %s", file.Name())
+		}
+	}
+
+	// Inicializar o processador de templates com o caminho absoluto
+	templateProcessor := services.NewTemplateProcessor(absTemplatesDir)
+
 	// Criar adaptador de cache
 	cacheAdapter := cache.NewRedisAdapter(redisHost, redisPort, redisPassword, 0)
 
@@ -89,7 +124,7 @@ func main() {
 	autenticacaoUseCase := usecases.NewAutenticacaoUseCase(autenticacaoService, estabelecimentoRepository)
 
 	// Handlers
-	pixHandler := handlers.NewPixHandler(generatePixUseCase, pixRepository, cacheAdapter)
+	pixHandler := handlers.NewPixHandler(generatePixUseCase, pixRepository, cacheAdapter, templateProcessor)
 	autenticacaoHandler := handlers.NovaAutenticacaoHandler(autenticacaoUseCase)
 
 	// Middlewares
@@ -97,6 +132,9 @@ func main() {
 
 	// Configurar o router Gin
 	router := gin.Default()
+
+	// Servir arquivos estáticos (incluindo templates)
+	router.Static("/templates", absTemplatesDir)
 
 	// Configurar Swagger
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

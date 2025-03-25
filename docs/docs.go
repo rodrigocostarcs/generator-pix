@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/download-qrcode": {
             "get": {
-                "description": "Faz o download de um QR code para o código PIX gerado",
+                "description": "Faz o download de um QR code para o código PIX gerado, opcionalmente aplicando um template",
                 "produces": [
                     "image/png",
                     "application/json"
@@ -46,6 +46,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Formato de resposta (json ou png, padrão é png)",
                         "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nome do template a ser aplicado (ex: template_pix_1)",
+                        "name": "template",
                         "in": "query"
                     }
                 ],

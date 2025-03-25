@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rodrigocostarcs/pix-generator/internal/application/usecases"
 	"github.com/rodrigocostarcs/pix-generator/internal/domain/models"
+	"github.com/rodrigocostarcs/pix-generator/internal/domain/services"
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/cache"
 	"github.com/rodrigocostarcs/pix-generator/internal/infrastructure/repositories"
 	"github.com/rodrigocostarcs/pix-generator/internal/interfaces/api/views"
@@ -27,15 +28,22 @@ type PixHandler struct {
 	pixRepository      repositories.PixRepository
 	responseView       *views.ResponseView
 	cacheAdapter       cache.CacheAdapter
+	templateProcessor  *services.TemplateProcessor // Novo campo
 }
 
 // NewPixHandler cria uma nova instância do handler PIX
-func NewPixHandler(generatePixUseCase *usecases.GeneratePixUseCase, pixRepository repositories.PixRepository, cacheAdapter cache.CacheAdapter) *PixHandler {
+func NewPixHandler(
+	generatePixUseCase *usecases.GeneratePixUseCase,
+	pixRepository repositories.PixRepository,
+	cacheAdapter cache.CacheAdapter,
+	templateProcessor *services.TemplateProcessor,
+) *PixHandler {
 	return &PixHandler{
 		generatePixUseCase: generatePixUseCase,
 		pixRepository:      pixRepository,
 		responseView:       views.NewResponseView(),
 		cacheAdapter:       cacheAdapter,
+		templateProcessor:  templateProcessor,
 	}
 }
 
@@ -88,12 +96,13 @@ func (h *PixHandler) GeneratePix(c *gin.Context) {
 
 // DownloadQRCode manipula o download do QR code
 // @Summary      Download QR Code
-// @Description  Faz o download de um QR code para o código PIX gerado
+// @Description  Faz o download de um QR code para o código PIX gerado, opcionalmente aplicando um template
 // @Tags         pix
 // @Produce      image/png
 // @Produce      application/json
 // @Param        codigo_pix  query     string  true   "Código PIX gerado"
 // @Param        format      query     string  false  "Formato de resposta (json ou png, padrão é png)"
+// @Param        template    query     string  false  "Nome do template a ser aplicado (ex: template_pix_1)"
 // @Success      200         {file}    file    "QR Code em formato PNG"
 // @Success      200         {object}  views.Response{data=models.PixResponse}  "Detalhes do QR Code em JSON"
 // @Failure      400         {object}  views.Response  "Código PIX não fornecido"
@@ -102,6 +111,7 @@ func (h *PixHandler) GeneratePix(c *gin.Context) {
 // @Router       /download-qrcode [get]
 func (h *PixHandler) DownloadQRCode(c *gin.Context) {
 	codigoPix := c.Query("codigo_pix")
+	templateName := c.Query("template")
 
 	if codigoPix == "" {
 		h.responseView.Error(c, http.StatusBadRequest, "Código PIX é obrigatório")
@@ -113,6 +123,9 @@ func (h *PixHandler) DownloadQRCode(c *gin.Context) {
 	// Verificar se os dados do QR code estão em cache
 	var cachedData CachedPix
 	cacheKey := "pix_qrcode:" + codigoPix
+	if templateName != "" {
+		cacheKey = cacheKey + ":" + templateName
+	}
 
 	// Tentar obter do cache
 	err := cache.GetObject(h.cacheAdapter, ctx, cacheKey, &cachedData)
@@ -152,6 +165,18 @@ func (h *PixHandler) DownloadQRCode(c *gin.Context) {
 			"qrcode_png": cachedData.Pix.QRCodePNG,
 			"qrcode_svg": cachedData.Pix.QRCodeSVG,
 		})
+		return
+	}
+
+	// Se um template foi especificado, aplicá-lo
+	if templateName != "" {
+		templateImgData, err := h.templateProcessor.ApplyTemplate(cachedData.Pix.QRCodePNG, templateName)
+		if err != nil {
+			h.responseView.Error(c, http.StatusInternalServerError, "Erro ao aplicar template: "+err.Error())
+			return
+		}
+
+		h.responseView.Download(c, "pix_template.png", "image/png", templateImgData)
 		return
 	}
 

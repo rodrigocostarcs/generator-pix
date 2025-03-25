@@ -2,8 +2,8 @@ FROM golang:1.24-alpine
 
 WORKDIR /app
 
-# Instalar ferramentas necessárias
-RUN apk add --no-cache git
+# Instalar ferramentas necessárias e dependências para processamento de imagens
+RUN apk add --no-cache git ca-certificates tzdata jpeg-dev libpng-dev
 
 # Instalar swag para geração de documentação Swagger
 RUN go install github.com/swaggo/swag/cmd/swag@latest
@@ -11,6 +11,16 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 # Copiar arquivos de dependências
 COPY go.mod go.sum ./
 RUN go mod download
+
+# Criar diretório para templates e garantir permissões
+RUN mkdir -p /app/templates
+RUN chmod -R 777 /app/templates
+
+# Copiar os templates
+COPY templates/ /app/templates/
+
+# Copiar o restante do código
+COPY . .
 
 # Exposição da porta
 EXPOSE 8080

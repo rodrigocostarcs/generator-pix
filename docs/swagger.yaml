@@ -189,7 +189,8 @@ info:
 paths:
   /download-qrcode:
     get:
-      description: Faz o download de um QR code para o código PIX gerado
+      description: Faz o download de um QR code para o código PIX gerado, opcionalmente
+        aplicando um template
       parameters:
       - description: Código PIX gerado
         in: query
@@ -199,6 +200,10 @@ paths:
       - description: Formato de resposta (json ou png, padrão é png)
         in: query
         name: format
+        type: string
+      - description: 'Nome do template a ser aplicado (ex: template_pix_1)'
+        in: query
+        name: template
         type: string
       produces:
       - image/png
