@@ -108,6 +108,7 @@ func main() {
 	port := getEnv("PORT", "8080")
 	log.Printf("Servidor iniciado na porta %s", port)
 	log.Printf("Documentação Swagger disponível em: http://localhost:%s/swagger/index.html", port)
+	log.Printf("Métricas Prometheus disponíveis em: http://localhost:%s/metrics", port)
 	router.Run(":" + port)
 }
 
